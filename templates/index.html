@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Earnings Calendar</title>
+  <style>
+    body {
+        font-family: sans-serif;
+        margin: 20px;
+    }
+    .calendar {
+        width: 80%;
+        margin: 20px auto;
+        border-collapse: collapse;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        overflow: hidden;
+        table-layout: fixed;
+    }
+
+    .calendar th, .calendar td {
+        border: 1px solid #e9ecef;
+        padding: 10px;
+        text-align: center;
+        height: 100px;
+        width: 14.28%;
+        box-sizing: border-box;
+    }
+
+    .calendar .today {
+        background-color: #e9ecef;
+    }
+
+    .calendar th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+
+    .calendar td {
+        border-radius: 10px;
+        vertical-align: top;
+    }
+
+    .calendar td > div:first-child {
+        font-size: 1.2em;
+        margin-bottom: 5px;
+    }
+
+    .dots {
+        display: grid;
+        grid-template-rows: repeat(2, 6px);  /* Two rows */
+        grid-template-columns: repeat(8, 6px);  /* 8 columns */
+        gap: 2px;
+        justify-content: center;
+        min-height: 16px;  /* Adjusted for two rows */
+        position: relative;
+        padding: 2px;
+        width: max-content;
+        margin: 0 auto;
+    }
+
+    .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+    }
+
+    .more-companies {
+        position: absolute;
+        right: -2px;
+        bottom: -15px;
+        font-size: 0.7em;
+        color: #666;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 1px 3px;
+        border-radius: 3px;
+    }
+
+    /* Sector colors - updated with all possible sector name variations */
+    .dot.Information_Technology, .legend-dot.Information_Technology,
+    .dot.Technology, .legend-dot.Technology { 
+        background-color: #4285f4; /* Google Blue */
+    }
+    
+    .dot.Health_Care, .legend-dot.Health_Care,
+    .dot.Healthcare, .legend-dot.Healthcare { 
+        background-color: #ea4335; /* Red */
+    }
+    
+    .dot.Financials, .legend-dot.Financials,
+    .dot.Financial_Services, .legend-dot.Financial_Services,
+    .dot.Financial, .legend-dot.Financial { 
+        background-color: #087f23; /* Dark Green */
+    }
+    
+    .dot.Consumer_Discretionary, .legend-dot.Consumer_Discretionary,
+    .dot.Consumer_Cyclical, .legend-dot.Consumer_Cyclical { 
+        background-color: #f57c00; /* Orange */
+    }
+    
+    .dot.Industrials, .legend-dot.Industrials { 
+        background-color: #9c27b0; /* Purple */
+    }
+    
+    .dot.Consumer_Staples, .legend-dot.Consumer_Staples,
+    .dot.Consumer_Defensive, .legend-dot.Consumer_Defensive { 
+        background-color: #c2185b; /* Pink */
+    }
+    
+    .dot.Energy, .legend-dot.Energy { 
+        background-color: #e65100; /* Deep Orange */
+    }
+    
+    .dot.Materials, .legend-dot.Materials,
+    .dot.Basic_Materials, .legend-dot.Basic_Materials { 
+        background-color: #1976d2; /* Blue */
+    }
+    
+    .dot.Real_Estate, .legend-dot.Real_Estate { 
+        background-color: #e91e63; /* Pink */
+    }
+    
+    .dot.Utilities, .legend-dot.Utilities { 
+        background-color: #00838f; /* Cyan */
+    }
+    
+    .dot.Communication_Services, .legend-dot.Communication_Services,
+    .dot.Communication, .legend-dot.Communication { 
+        background-color: #3f51b5; /* Indigo */
+    }
+    
+    .dot.default, .legend-dot.default { 
+        background-color: #d32f2f; /* Red */
+        border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    /* Make dots and legend dots more visible */
+    .dot, .legend-dot {
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+    }
+
+    /* Legend styles - updated */
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin: 20px auto;
+        width: 80%;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        justify-content: center;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9em;
+        padding: 5px 10px;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.7);
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .navigation {
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .navigation a {
+        background-color: #f0f0f0;
+        border: none;
+        color: black;
+        padding: 5px 10px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 0 5px;
+    }
+
+    .navigation a:hover {
+        background-color: #e9ecef;
+    }
+
+    .navigation span {
+        margin: 0 10px;
+        font-weight: bold;
+    }
+
+    .calendar td:hover {
+        background-color: #f0f0f0;
+        cursor: pointer;
+    }
+
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 50%;
+        max-height: 80vh;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 15px;
+        flex-shrink: 0;
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        max-height: calc(80vh - 100px);
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: black;
+    }
+
+    .company-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .company-item {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 10px;
+    }
+
+    .company-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .company-header {
+        margin-bottom: 10px;
+    }
+
+    .company-symbol {
+        font-weight: bold;
+        font-size: 1.2em;
+        color: #333;
+    }
+
+    .company-name {
+        font-size: 1em;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .company-sector {
+        display: inline-block;
+        background-color: #e9ecef;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .company-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 10px;
+    }
+
+    .company-detail {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-label {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.2em;
+    }
+
+    .no-companies {
+        text-align: center;
+        color: #666;
+        padding: 20px;
+    }
+
+    /* Scrollbar styling */
+    .modal-body::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center;">S&P 500 Earnings Calendar</h1>
+  
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot Information_Technology"></div>
+      <span>Technology</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Health_Care"></div>
+      <span>Healthcare</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Financials"></div>
+      <span>Financials</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Consumer_Discretionary"></div>
+      <span>Consumer Discretionary</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Industrials"></div>
+      <span>Industrials</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Consumer_Staples"></div>
+      <span>Consumer Staples</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Energy"></div>
+      <span>Energy</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Materials"></div>
+      <span>Materials</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Real_Estate"></div>
+      <span>Real Estate</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Utilities"></div>
+      <span>Utilities</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot Communication_Services"></div>
+      <span>Communication Services</span>
+    </div>
+  </div>
+
+  <div class="navigation">
+    <a href="/{{ current_year }}/{{ current_month - 1 if current_month > 1 else 12 }}/{{ current_year - 1 if current_month == 1 else current_year }}"><< Prev</a>
+    <span>{{ current_year }}/{{ current_month }}</span>
+    <a href="/{{ current_year }}/{{ current_month + 1 if current_month < 12 else 1 }}/{{ current_year + 1 if current_month == 12 else current_year }}">Next >></a>
+  </div>
+  <table class="calendar">
+    <thead>
+      <tr>
+        <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for day in calendar_days %}
+            {% if loop.index0 % 7 == 0 %}<tr>{% endif %}
+            <td {% if day.day == today %} class="today" {% endif %} data-date="{{ day.strftime('%Y-%m-%d') }}">
+                <div>{{ day.day }}</div>
+                <div class="dots">
+                    {% set companies = calendar_data.get(day.strftime('%Y-%m-%d'), []) %}
+                    {% if companies %}
+                        {# Group companies by sector #}
+                        {% set sectors = {} %}
+                        {% for company in companies %}
+                            {% set sector = company.sector|default('')|replace(' ', '_')|replace('-', '_') %}
+                            {% if sector not in sectors %}
+                                {% set _ = sectors.update({sector: 1}) %}
+                            {% else %}
+                                {% set _ = sectors.update({sector: sectors[sector] + 1}) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {# Display dots grouped by sector #}
+                        {% set dot_count = 0 %}
+                        {% for sector, count in sectors.items() %}
+                            {% for i in range(count) %}
+                                {% if dot_count < 15 %}
+                                    <div class="dot {{ sector or 'default' }}"></div>
+                                    {% set dot_count = dot_count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                        
+                        {% if companies|length > 15 %}
+                            <div class="more-companies">+{{ companies|length - 15 }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </td>
+            {% if loop.index0 % 7 == 6 %}</tr>{% endif %}
+        {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Modal -->
+  <div id="companyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="close">&times;</span>
+        <h2 class="modal-title">Companies Reporting Earnings</h2>
+      </div>
+      <div class="modal-body" id="companyList"></div>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('companyModal');
+    const companyListDiv = document.getElementById('companyList');
+    const closeBtn = document.getElementsByClassName('close')[0];
+    const calendarCells = document.querySelectorAll('.calendar td');
+    
+    function formatNumber(num) {
+        if (num === 'N/A') return num;
+        return parseFloat(num).toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    function formatRevenue(num) {
+        if (num === 'N/A') return num;
+        return '$' + parseFloat(num).toLocaleString('en-US');
+    }
+    
+    calendarCells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        const date = cell.dataset.date;
+        const companies = {{ calendar_data|tojson }}[date];
+        
+        if (companies && companies.length > 0) {
+          const list = document.createElement('ul');
+          list.className = 'company-list';
+          
+          companies.forEach(company => {
+            const item = document.createElement('li');
+            item.className = 'company-item';
+            
+            const header = document.createElement('div');
+            header.className = 'company-header';
+            
+            const symbol = document.createElement('div');
+            symbol.className = 'company-symbol';
+            symbol.textContent = company.symbol;
+            
+            const name = document.createElement('div');
+            name.className = 'company-name';
+            name.textContent = company.name || 'N/A';
+            
+            const sector = document.createElement('div');
+            sector.className = 'company-sector';
+            sector.textContent = company.sector || 'N/A';
+            
+            header.appendChild(symbol);
+            header.appendChild(name);
+            header.appendChild(sector);
+            
+            const details = document.createElement('div');
+            details.className = 'company-details';
+            
+            const fiscalDate = document.createElement('div');
+            fiscalDate.className = 'company-detail';
+            fiscalDate.innerHTML = `<span class="detail-label">Fiscal Date Ending:</span> ${company.fiscalDateEnding}`;
+            
+            const eps = document.createElement('div');
+            eps.className = 'company-detail';
+            eps.innerHTML = `<span class="detail-label">EPS Estimate:</span> ${formatNumber(company.epsEstimated)}`;
+            
+            const revenue = document.createElement('div');
+            revenue.className = 'company-detail';
+            revenue.innerHTML = `<span class="detail-label">Revenue Estimate:</span> ${formatRevenue(company.revenueEstimated)}`;
+            
+            details.appendChild(fiscalDate);
+            details.appendChild(eps);
+            details.appendChild(revenue);
+            
+            item.appendChild(header);
+            item.appendChild(details);
+            list.appendChild(item);
+          });
+          
+          companyListDiv.innerHTML = '';
+          companyListDiv.appendChild(list);
+          modal.style.display = 'block';
+        } else {
+          companyListDiv.innerHTML = '<div class="no-companies">No companies reporting on this date</div>';
+          modal.style.display = 'block';
+        }
+      });
+    });
+
+    closeBtn.onclick = function() {
+      modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html> 
